@@ -91,7 +91,7 @@ public class Shoot : MonoBehaviour
 
         //  ## TO-DO 4 - Actualizar el contador m_TimeSinceLastShot ## 
         // Para ello, habrá que sumarle el tiempo de ejecución del anterior frame
-
+        m_TimeSinceLastShot += Time.deltaTime;
 
         if (GetFireButton())
 		{
