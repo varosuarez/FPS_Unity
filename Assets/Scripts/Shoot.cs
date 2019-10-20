@@ -30,7 +30,7 @@ public class Shoot : MonoBehaviour
     /// <summary>
     /// Tiempo transcurrido entre disparos
     /// </summary>
-    [System.NonSerialized]
+    //[System.NonSerialized]
 	public float m_TimeBetweenShots = 0.25f;
 	
 	/// <summary>
@@ -58,19 +58,25 @@ public class Shoot : MonoBehaviour
     /// </summary>
     public AudioClip m_ShootAudio;
 
+    /// <summary>
+    /// Tiempo de vida de las particulas de disparo.
+    /// </summary>
+    public float m_ShootDuration = 1f;
+
     #endregion
 
     #region Non exposed fields
-	
-	/// <summary>
-	/// Tiempo transcurrido desde el último disparo
-	/// </summary>
-	private float m_TimeSinceLastShot = 0;
+
+    /// <summary>
+    /// Tiempo transcurrido desde el último disparo
+    /// </summary>
+    private float m_TimeSinceLastShot = 0;
 
     /// <summary>
     /// Indica si estamos disparando (util en modo automático).
     /// </summary>
     private bool m_IsShooting = false;
+
 
     private AudioSource audioSource=null;
 
@@ -99,10 +105,15 @@ public class Shoot : MonoBehaviour
             {
                 // ## TO-DO 5 - En función de si hay proyectil o no, usar la función de disparo
                 // con proyectil, o la de disparo con rayo ## 
+                if (m_projectile != null)
+                {
+                    ShootProjectile();
+                } 
+                else
+                    ShootRay();
 
-                ShootProjectile();
-                // ## TO-DO 6 - Reiniciar el contador m_TimeSinceLastShot ## 
-
+                // ## TO-DO 6 - Reiniciar el contador m_TimeSinceLastShot ##
+                m_TimeSinceLastShot = 0;
             }
 
             if (!m_IsShooting)
@@ -110,29 +121,30 @@ public class Shoot : MonoBehaviour
                 m_IsShooting = true;
 
                 // ## TO-DO 7 Poner sonido de disparo.
-
+                audioSource.Play();
             }
 		}
         else if (m_IsShooting)
         {
             m_IsShooting = false;
-
             // ## TO-DO 8 Parar sonido de disparo.
-
+            audioSource.Stop();
         }
-
     }
-	
-	// 
+
+    // 
     /// <summary>
     /// En esta función comprobamos si el tiempo que ha pasado desde la última vez que disparamos
     /// es suficiente para que nos dejen volver a disparar 
     /// </summary>
     /// <returns>true si puede disparar y falso si no puede.</returns>
-	private bool CanShoot()
+    private bool CanShoot()
 	{
         //  ## TO-DO 8 - Comprobar si puedo disparar #
-        return true;
+        if (m_TimeSinceLastShot >= m_TimeBetweenShots)
+            return true;
+        else
+            return false;
 	}
 	
     /// <summary>
@@ -143,13 +155,10 @@ public class Shoot : MonoBehaviour
 	{
         //Obtener el botón de disparo. Si es automático se pulsará GetButton y si no, GetButtonDown. El botón que usamoremos es "Fire"
         //  ## TO-DO 1 ## 
-
         if (m_IsAutomatic)
             return Input.GetButton("Fire1");
         else
             return Input.GetButtonDown("Fire1");
-
-        //return false;
     }
 	
     /// <summary>
@@ -171,7 +180,7 @@ public class Shoot : MonoBehaviour
         Collider projectileCollider = project.GetComponent<Collider>();
         Collider mycollider = transform.root.GetComponent<Collider>();
         Physics.IgnoreCollision(projectileCollider, mycollider);
-
+        
         Debug.Log("¡Pollo!");
 	}
 
@@ -184,7 +193,18 @@ public class Shoot : MonoBehaviour
         // 1.- Lanzar un rayo utlizando para ello el módulo de física -> pista Physics.Ra...
         // 2.- Aplicar una fuerza en el punto de impacto.
         // 3.- Colocar particulas de chispas en el punto de impacto -> pista Instanciamos pero no nos preocupasmo del destroy porque el asset puede autodestruirse (componente particle animator).
-        
+        RaycastHit hit;
+        if (Physics.Raycast(m_ShootPoint.transform.position, m_ShootPoint.transform.TransformDirection(Vector3.forward), out hit, m_ShootRange))
+        {
+            GameObject particleShoot = (GameObject)Instantiate(m_Sparkles, hit.point, m_ShootPoint.rotation);
+                       Destroy(particleShoot, m_ShootDuration);
+            if (hit.rigidbody != null)
+            {
+                //print("Found an object - distance: " + hit.distance);
+                hit.rigidbody.AddForce(-hit.normal * m_ShootForce);
+            }
+        }
+           
     }
 
     //## TO-DO 3 Mostrar un puntero laser con la dirección de disparo.
