@@ -21,6 +21,10 @@ namespace UnityStandardAssets.Characters.FirstPerson
         private Quaternion m_CameraTargetRot;
         private bool m_cursorIsLocked = true;
 
+        // GM - Recoil variables
+        private float m_verticalRecoil = 0f;
+        private float m_horizontalRecoil = 0f;
+
         public void Init(Transform character, Transform camera)
         {
             m_CharacterTargetRot = character.localRotation;
@@ -30,10 +34,12 @@ namespace UnityStandardAssets.Characters.FirstPerson
 
         public void LookRotation(Transform character, Transform camera)
         {
-            float yRot = CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
-            float xRot = CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
+            float yRot = m_horizontalRecoil + CrossPlatformInputManager.GetAxis("Mouse X") * XSensitivity;
+            float xRot = m_verticalRecoil + CrossPlatformInputManager.GetAxis("Mouse Y") * YSensitivity;
+            m_verticalRecoil = 0f;
+            m_horizontalRecoil = 0f;
 
-            m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
+        m_CharacterTargetRot *= Quaternion.Euler (0f, yRot, 0f);
             m_CameraTargetRot *= Quaternion.Euler (-xRot, 0f, 0f);
 
             if(clampVerticalRotation)
@@ -111,5 +117,17 @@ namespace UnityStandardAssets.Characters.FirstPerson
             return q;
         }
 
+        // GM - Método para añadir el recoil desde Shoot
+        public void addStaticRecoil(float vertical, float horizontal)
+        {
+            m_verticalRecoil += vertical;
+            m_horizontalRecoil += horizontal;
+        }
+
+        public void addRandomRecoil(float maxVertical, float maxHorizontal)
+        {
+            m_verticalRecoil += maxVertical;
+            m_horizontalRecoil += UnityEngine.Random.Range(-maxHorizontal, maxHorizontal);
+        }
     }
 }

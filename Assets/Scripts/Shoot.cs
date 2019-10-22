@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityStandardAssets.Characters.FirstPerson; // GM - Añadido el namespace para intanciar FirstPersonController y MouseLook
 
 // Contiene la declaración de la clase Shoot, encargada de la mecánica de disparo.
 // Permite dos formas de disparo exclusivas:
@@ -63,6 +64,9 @@ public class Shoot : MonoBehaviour
     /// </summary>
     public float m_ShootDuration = 1f;
 
+    // Chicken Sounds
+    private ChickenSounds m_cSounds;
+
     #endregion
 
     #region Non exposed fields
@@ -77,6 +81,15 @@ public class Shoot : MonoBehaviour
     /// </summary>
     private bool m_IsShooting = false;
 
+    // GM - Variables para modular el recoil
+    /// <summary>
+    /// Añaden recoil al disparo de las armas
+    /// </summary>
+    public float m_verticalRecoil = 0f;
+    public float m_horizontalRecoil = 0f;
+
+    private FirstPersonController m_FPSController;
+    private MouseLook m_mouseLook;
 
     private AudioSource audioSource=null;
 
@@ -87,6 +100,9 @@ public class Shoot : MonoBehaviour
     private void Start()
     {
         audioSource = GetComponent<AudioSource>();
+        m_FPSController = GameObject.FindGameObjectWithTag("Player").GetComponent<FirstPersonController>();
+        m_mouseLook = m_FPSController.m_MouseLook;
+        m_cSounds = GameObject.FindGameObjectWithTag("Pollos").GetComponent<ChickenSounds>();
     }
     /// <summary>
     /// En el método Update se consultará al Input si se ha pulsado el botón de disparo
@@ -180,7 +196,12 @@ public class Shoot : MonoBehaviour
         Collider projectileCollider = project.GetComponent<Collider>();
         Collider mycollider = transform.root.GetComponent<Collider>();
         Physics.IgnoreCollision(projectileCollider, mycollider);
-        
+
+        // GM - Añadir recoil
+        m_mouseLook.addRandomRecoil(m_verticalRecoil,m_horizontalRecoil);
+
+        // GM - Play POLLO sound
+        m_cSounds.playSomeRandomChicken();
         Debug.Log("¡Pollo!");
 	}
 
@@ -193,6 +214,7 @@ public class Shoot : MonoBehaviour
         // 1.- Lanzar un rayo utlizando para ello el módulo de física -> pista Physics.Ra...
         // 2.- Aplicar una fuerza en el punto de impacto.
         // 3.- Colocar particulas de chispas en el punto de impacto -> pista Instanciamos pero no nos preocupasmo del destroy porque el asset puede autodestruirse (componente particle animator).
+
         RaycastHit hit;
         if (Physics.Raycast(m_ShootPoint.transform.position, m_ShootPoint.transform.TransformDirection(Vector3.forward), out hit, m_ShootRange))
         {
@@ -204,7 +226,9 @@ public class Shoot : MonoBehaviour
                 hit.rigidbody.AddForce(-hit.normal * m_ShootForce);
             }
         }
-           
+
+        // GM - Añadir recoil
+        m_mouseLook.addRandomRecoil(m_verticalRecoil, m_horizontalRecoil);
     }
 
     //## TO-DO 3 Mostrar un puntero laser con la dirección de disparo.
